@@ -2,25 +2,21 @@ import RPi.GPIO as GPIO
 import time
 
 PWM_PIN = 18  # GPIO 18 (BCM-modus)
+FREQUENCY = 440  # Frequentie van de toon in Hz
+DURATION = 5  # Duur van de toon in seconden
 
 # GPIO-instellingen
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PWM_PIN, GPIO.OUT)
 
 # Start PWM op GPIO 18
-pwm = GPIO.PWM(PWM_PIN, 100)  # 100 Hz
-pwm.start(0)  # Start met 0% duty cycle
+pwm = GPIO.PWM(PWM_PIN, FREQUENCY)  # Stel frequentie in
+pwm.start(50)  # Stel duty cycle in op 50%
 
-try:
-    while True:
-        for duty_cycle in range(0, 101, 5):  # Verhoog helderheid
-            pwm.ChangeDutyCycle(duty_cycle)
-            time.sleep(0.1)
-        for duty_cycle in range(100, -1, -5):  # Verlaag helderheid
-            pwm.ChangeDutyCycle(duty_cycle)
-            time.sleep(0.1)
-except KeyboardInterrupt:
-    print("PWM-test gestopt.")
-finally:
-    pwm.stop()
-    GPIO.cleanup()
+print(f"Speel toon af: {FREQUENCY} Hz gedurende {DURATION} seconden.")
+time.sleep(DURATION)  # Houd toon aan voor de opgegeven duur
+
+# Stop PWM en maak GPIO schoon
+pwm.stop()
+GPIO.cleanup()
+print("Geluid gestopt.")
