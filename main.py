@@ -18,18 +18,23 @@ def play_test_sound(frequency, duration):
     sample_rate = 44100  # Sample rate in Hz
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
     wave = 0.5 * np.sin(2 * np.pi * frequency * t)  # Sinusgolf
-    unmute_pwm()  # Zet de PWM-uitvoer aan
+    unmute_pwm()  # Zet de audio-uitvoer aan
+    set_volume(100)  # Zet het volume op 100%
     sd.play(wave, samplerate=sample_rate)
     sd.wait()  # Wacht tot het geluid klaar is
-    mute_pwm()  # Zet de PWM-uitvoer uit
+    mute_pwm()  # Zet de audio-uitvoer uit
 
 def mute_pwm():
-    """Schakelt de PWM-uitvoer uit."""
-    os.system("amixer -c 0 sset 'Headphone' 0%")
+    """Schakelt de audio-uitvoer uit."""
+    os.system("amixer -c 0 sset 'PCM Playback Switch' off")
 
 def unmute_pwm():
-    """Schakelt de PWM-uitvoer weer in."""
-    os.system("amixer -c 0 sset 'Headphone' 100%")
+    """Schakelt de audio-uitvoer weer in."""
+    os.system("amixer -c 0 sset 'PCM Playback Switch' on")
+
+def set_volume(volume):
+    """Stel het volume in (0-100%)."""
+    os.system(f"amixer -c 0 sset 'PCM Playback Volume' {volume}%")
 
 print("Klaar! Neem de hoorn op om een geluid te horen.")
 
@@ -47,4 +52,4 @@ except KeyboardInterrupt:
     print("\nProgramma gestopt.")
 finally:
     GPIO.cleanup()  # Reset GPIO-instellingen
-    mute_pwm()  # Zorg dat PWM-uitvoer uitstaat
+    mute_pwm()  # Zorg dat de audio-uitvoer uitstaat
