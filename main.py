@@ -4,7 +4,7 @@ import sounddevice as sd
 
 # Configuratie
 SAMPLE_RATE = 44100  # Sample rate in Hz
-DURATION = 5         # Duur van de toon in seconden
+DURATION = 30         # Duur van de toon in seconden
 FREQUENCY = 440      # Frequentie van de toon in Hz
 DEFAULT_VOLUME = 80  # Standaardvolume in procenten (0-100%)
 
