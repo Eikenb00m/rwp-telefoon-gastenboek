@@ -1,18 +1,60 @@
 import os
-import numpy as np
+import RPi.GPIO as GPIO
 import sounddevice as sd
+import numpy as np
+import time
 
 # Configuratie
-FREQUENCY = 440  # Frequentie van de toon in Hz
-DURATION = 2     # Duur van de toon in seconden
-SAMPLE_RATE = 44100  # Sample rate in Hz
+HOORN_PIN = 17  # GPIO-pin verbonden met de schakelaar
+TEST_FREQUENCY = 440  # Frequentie in Hz (A4-toon)
+TEST_DURATION = 2  # Duur van het geluid in seconden
+VOLUME = 50  # Startvolume in procenten (0-100%)
 
-def play_test_tone(frequency, duration):
-    """Speelt een testtoon af."""
-    t = np.linspace(0, duration, int(SAMPLE_RATE * duration), endpoint=False)
+# GPIO-instellingen
+GPIO.setmode(GPIO.BCM)  # BCM-pinindeling
+GPIO.setup(HOORN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Pull-up omdat de schakelaar NC is
+
+def play_test_sound(frequency, duration):
+    """Speelt een testgeluid af met de gegeven frequentie en duur."""
+    sample_rate = 44100  # Sample rate in Hz
+    t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
     wave = 0.5 * np.sin(2 * np.pi * frequency * t)  # Sinusgolf
-    sd.play(wave, samplerate=SAMPLE_RATE)
-    sd.wait()
+    set_volume(VOLUME)  # Stel volume in
+    sd.play(wave, samplerate=sample_rate)
+    sd.wait()  # Wacht tot het geluid klaar is
 
-print("Speel een testtoon af...")
-play_test_tone(FREQUENCY, DURATION)
+def set_volume(volume):
+    """Stel het volume in (0-100%)."""
+    os.system(f"amixer -c 0 sset 'PCM' {volume}%")
+
+def adjust_volume():
+    """Pas het volume aan tijdens runtime."""
+    global VOLUME
+    try:
+        new_volume = int(input("Voer nieuw volume in (0-100%): "))
+        if 0 <= new_volume <= 100:
+            VOLUME = new_volume
+            print(f"Volume ingesteld op {VOLUME}%.")
+        else:
+            print("Volume moet tussen 0 en 100 liggen.")
+    except ValueError:
+        print("Ongeldige invoer. Voer een getal in tussen 0 en 100.")
+
+print("Klaar! Neem de hoorn op om een geluid te horen.")
+print("Druk op Ctrl+C om het programma te stoppen.")
+
+try:
+    while True:
+        if GPIO.input(HOORN_PIN) == GPIO.HIGH:  # Hoorn is opgepakt (schakelaar geopend)
+            print("Hoorn opgepakt! Geluid afspelen...")
+            play_test_sound(TEST_FREQUENCY, TEST_DURATION)
+            time.sleep(1)  # Wacht even voordat opnieuw wordt gecontroleerd
+        else:
+            print("Hoorn op de haak.")
+        time.sleep(0.1)  # Vermijd overmatig CPU-gebruik
+except KeyboardInterrupt:
+    print("\nProgramma gestopt.")
+    while True:
+        adjust_volume()
+finally:
+    GPIO.cleanup()  # Reset GPIO-instellingen
