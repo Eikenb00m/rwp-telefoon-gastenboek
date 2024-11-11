@@ -13,6 +13,7 @@ VOLUME = 50  # Startvolume in procenten (0-100%)
 # GPIO-instellingen
 GPIO.setmode(GPIO.BCM)  # BCM-pinindeling
 GPIO.setup(HOORN_PIN, GPIO.IN, pull_up_down=GPIO.PUD_UP)  # Pull-up omdat de schakelaar NC is
+GPIO.setup(18, GPIO.OUT)  # GPIO 18 configureren voor audio-uitvoer
 
 def play_test_sound(frequency, duration):
     """Speelt een testgeluid af met de gegeven frequentie en duur."""
@@ -28,10 +29,12 @@ def play_test_sound(frequency, duration):
 def mute_pwm():
     """Schakelt de audio-uitvoer uit."""
     os.system("amixer -c 0 sset 'PCM' mute")
+    GPIO.setup(18, GPIO.IN)  # Zet GPIO 18 in input-modus om ruis te verminderen
 
 def unmute_pwm():
     """Schakelt de audio-uitvoer weer in."""
     os.system("amixer -c 0 sset 'PCM' unmute")
+    GPIO.setup(18, GPIO.OUT)  # Zet GPIO 18 terug in output-modus
 
 def set_volume(volume):
     """Stel het volume in (0-100%)."""
@@ -61,8 +64,7 @@ try:
             time.sleep(1)  # Wacht even voordat opnieuw wordt gecontroleerd
         else:
             print("Hoorn op de haak.")
-        # Poll elke 10 seconden voor nieuwe volumewijzigingen
-        time.sleep(0.1)
+        time.sleep(0.1)  # Vermijd overmatig CPU-gebruik
 except KeyboardInterrupt:
     print("\nProgramma gestopt.")
     while True:
