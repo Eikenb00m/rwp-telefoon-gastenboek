@@ -7,7 +7,7 @@ FREQUENCY = 440      # Frequentie van de toon in Hz
 
 # Genereer een sinusgolf
 t = np.linspace(0, DURATION, int(SAMPLE_RATE * DURATION), endpoint=False)
-wave = 0.5 * np.sin(2 * np.pi * FREQ * t)
+wave = 0.5 * np.sin(2 * np.pi * FREQUENCY * t)  # Correcte variabele naam
 
 # Speel het geluid af
 print("Speel toon af...")
