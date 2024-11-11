@@ -1,22 +1,22 @@
-import vlc
+import RPi.GPIO as GPIO
 import time
 
-# Pad naar het MP3-bestand
-MP3_FILE = "test.mp3"  # Vervang door je bestandspad
+PWM_PIN = 18  # GPIO 18 (BCM-modus)
+FREQUENCY = 440  # Frequentie van de toon in Hz
+DURATION = 5  # Duur van de toon in seconden
 
-# Instellen van VLC met ALSA-output
-instance = vlc.Instance("--aout=alsa")  # Forceer ALSA als audio-uitvoer
-player = instance.media_player_new()
-media = instance.media_new(MP3_FILE)
-player.set_media(media)
+# GPIO-instellingen
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(PWM_PIN, GPIO.OUT)
 
-# Speel het MP3-bestand af
-print(f"Speelt {MP3_FILE} af...")
-player.play()
+# Start PWM op GPIO 18
+pwm = GPIO.PWM(PWM_PIN, FREQUENCY)  # Stel frequentie in
+pwm.start(50)  # Stel duty cycle in op 50%
 
-# Wacht totdat het bestand is afgespeeld
-time.sleep(1)  # Geef VLC de tijd om te starten
-while player.is_playing():
-    time.sleep(1)
+print(f"Speel toon af: {FREQUENCY} Hz gedurende {DURATION} seconden.")
+time.sleep(DURATION)  # Houd toon aan voor de opgegeven duur
 
-print("Afspelen voltooid.")
+# Stop PWM en maak GPIO schoon
+pwm.stop()
+GPIO.cleanup()
+print("Geluid gestopt.")
