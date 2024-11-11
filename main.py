@@ -19,22 +19,22 @@ def play_test_sound(frequency, duration):
     t = np.linspace(0, duration, int(sample_rate * duration), endpoint=False)
     wave = 0.5 * np.sin(2 * np.pi * frequency * t)  # Sinusgolf
     unmute_pwm()  # Zet de audio-uitvoer aan
-    set_volume(100)  # Zet het volume op 100%
+    set_volume(91)  # Zet het volume op 91% (of pas aan)
     sd.play(wave, samplerate=sample_rate)
     sd.wait()  # Wacht tot het geluid klaar is
     mute_pwm()  # Zet de audio-uitvoer uit
 
 def mute_pwm():
     """Schakelt de audio-uitvoer uit."""
-    os.system("amixer -c 0 sset 'PCM Playback Switch' off")
+    os.system("amixer -c 0 sset 'PCM' mute")
 
 def unmute_pwm():
     """Schakelt de audio-uitvoer weer in."""
-    os.system("amixer -c 0 sset 'PCM Playback Switch' on")
+    os.system("amixer -c 0 sset 'PCM' unmute")
 
 def set_volume(volume):
     """Stel het volume in (0-100%)."""
-    os.system(f"amixer -c 0 sset 'PCM Playback Volume' {volume}%")
+    os.system(f"amixer -c 0 sset 'PCM' {volume}%")
 
 print("Klaar! Neem de hoorn op om een geluid te horen.")
 
