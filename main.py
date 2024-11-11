@@ -4,8 +4,11 @@ import time
 # Pad naar het MP3-bestand
 MP3_FILE = "test.mp3"  # Vervang door je bestandspad
 
-# Initialiseer VLC-speler
-player = vlc.MediaPlayer(MP3_FILE)
+# Instellen van VLC met ALSA-output
+instance = vlc.Instance("--aout=alsa")  # Forceer ALSA als audio-uitvoer
+player = instance.media_player_new()
+media = instance.media_new(MP3_FILE)
+player.set_media(media)
 
 # Speel het MP3-bestand af
 print(f"Speelt {MP3_FILE} af...")
