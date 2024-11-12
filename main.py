@@ -2,21 +2,24 @@ import RPi.GPIO as GPIO
 import time
 
 PWM_PIN = 18  # GPIO 18
-FREQ = 440    # Toonfrequentie (Hz)
-DURATION = 5  # Duur in seconden
+TONEN = [220, 440, 880, 1760]  # Toonhoogtes in Hz
+DUUR = 1  # Duur per toon in seconden
 
 # GPIO-configuratie
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PWM_PIN, GPIO.OUT)
 
 # Start PWM
-pwm = GPIO.PWM(PWM_PIN, FREQ)
-pwm.start(50)  # 50% duty cycle
+pwm = GPIO.PWM(PWM_PIN, 440)  # Start met een standaardfrequentie
+pwm.start(50)  # Start met 50% duty cycle
 
-print(f"Speel een {FREQ} Hz toon gedurende {DURATION} seconden.")
-time.sleep(DURATION)
-
-# Stop PWM
-pwm.stop()
-GPIO.cleanup()
-print("PWM gestopt.")
+try:
+    for freq in TONEN:
+        print(f"Speel {freq} Hz voor {DUUR} seconden...")
+        pwm.ChangeFrequency(freq)  # Verander de frequentie
+        time.sleep(DUUR)
+    print("Test voltooid.")
+finally:
+    pwm.stop()
+    GPIO.cleanup()
+    print("PWM gestopt en GPIO vrijgegeven.")
