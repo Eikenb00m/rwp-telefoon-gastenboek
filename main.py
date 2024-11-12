@@ -19,6 +19,12 @@ def stereo_to_mono(frames, num_channels):
         samples = samples.mean(axis=1).astype(np.int16)  # Gemiddelde van beide kanalen
     return samples
 
+def normalize_samples(samples):
+    """Normaliseer samples naar een bereik van 0 tot 100."""
+    samples = samples - np.min(samples)  # Schuif naar positief bereik
+    samples = samples / np.ptp(samples)  # ptp = max - min (bereik normalisatie)
+    return samples * 100  # Schaal naar 0-100%
+
 def play_wav(file_path):
     """Speel een WAV-bestand af via PWM."""
     with wave.open(file_path, "rb") as wav_file:
@@ -34,9 +40,7 @@ def play_wav(file_path):
         samples = stereo_to_mono(frames, num_channels)
 
         # Normaliseer samples naar een bereik van 0 tot 100
-        samples = samples - np.min(samples)  # Schuif naar positief bereik
-        samples = samples / np.max(samples)  # Normaliseer naar 0-1
-        samples = samples * 100  # Schaal naar 0-100%
+        samples = normalize_samples(samples)
 
         # Start PWM
         pwm = GPIO.PWM(PWM_PIN, sample_rate)
@@ -45,8 +49,8 @@ def play_wav(file_path):
         print("Afspelen gestart...")
         try:
             for sample in samples:
-                pwm.ChangeDutyCycle(sample)
-                time.sleep(1 / sample_rate)
+                pwm.ChangeDutyCycle(sample)  # Pas duty cycle aan
+                time.sleep(1 / sample_rate)  # Houd de sample rate aan
         except KeyboardInterrupt:
             print("Afspelen onderbroken.")
         finally:
