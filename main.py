@@ -2,11 +2,9 @@ import RPi.GPIO as GPIO
 import time
 import wave
 import numpy as np
-from scipy.signal import resample
 
 # Configuratie
 PWM_PIN = 18  # GPIO 18 voor PWM
-TARGET_SAMPLE_RATE = 44100  # Doelsample rate
 WAV_FILE = "test.wav"  # Pad naar je WAV-bestand
 
 # GPIO-instellingen
@@ -21,34 +19,22 @@ def stereo_to_mono(frames, num_channels):
         samples = samples.mean(axis=1).astype(np.int16)  # Gemiddelde van beide kanalen
     return samples
 
-def resample_audio(samples, original_rate, target_rate):
-    """Herschalen van audio naar de doelsample rate."""
-    if original_rate == target_rate:
-        return samples  # Geen aanpassing nodig
-    print(f"Herschaal audio van {original_rate} Hz naar {target_rate} Hz...")
-    num_samples = int(len(samples) * target_rate / original_rate)
-    resampled = resample(samples, num_samples)
-    return resampled.astype(np.float32)
-
 def play_wav(file_path):
     """Speel een WAV-bestand af via PWM."""
     with wave.open(file_path, "rb") as wav_file:
         # Haal audio-informatie op
         num_channels = wav_file.getnchannels()
-        original_rate = wav_file.getframerate()
+        sample_rate = wav_file.getframerate()
+
+        print(f"Sample rate van het bestand: {sample_rate} Hz")
 
         # Lees frames en converteer naar numpy-array
         frames = wav_file.readframes(wav_file.getnframes())
         samples = stereo_to_mono(frames, num_channels)  # Converteer naar mono als nodig
-
-        # Herschalen naar 44100 Hz
-        samples = resample_audio(samples, original_rate, TARGET_SAMPLE_RATE)
-
-        # Normaliseer samples naar -1 tot 1
-        samples = samples / np.max(np.abs(samples))
+        samples = samples / np.max(np.abs(samples))  # Normaliseer samples naar -1 tot 1
 
         # Start PWM
-        pwm = GPIO.PWM(PWM_PIN, TARGET_SAMPLE_RATE)  # PWM met doelsample rate
+        pwm = GPIO.PWM(PWM_PIN, sample_rate)  # Gebruik sample rate van bestand
         pwm.start(50)  # Start met een gemiddelde duty cycle
 
         print(f"Speelt {file_path} af...")
@@ -57,7 +43,7 @@ def play_wav(file_path):
                 # Converteer sample naar duty cycle (0-100%)
                 duty_cycle = (sample + 1) * 50
                 pwm.ChangeDutyCycle(duty_cycle)
-                time.sleep(1 / TARGET_SAMPLE_RATE)
+                time.sleep(1 / sample_rate)
         except KeyboardInterrupt:
             print("Afspelen onderbroken.")
         finally:
