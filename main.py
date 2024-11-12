@@ -5,7 +5,8 @@ import time
 
 # Configuratie
 PWM_PIN = 18  # GPIO 18 voor PWM
-WAV_FILE = "test.wav"  # Pad naar het stereo-WAV-bestand
+WAV_FILE = "test.wav"  # Pad naar het WAV-bestand
+BUFFER_SIZE = 1024  # Aantal samples om tegelijk te verwerken
 
 # GPIO-instellingen
 GPIO.setmode(GPIO.BCM)
@@ -26,21 +27,13 @@ def normalize_samples(samples):
     return samples * 100  # Schaal naar 0-100%
 
 def play_wav(file_path):
-    """Speel een WAV-bestand af via PWM."""
+    """Speel een WAV-bestand realtime af via PWM."""
     with wave.open(file_path, "rb") as wav_file:
         # Haal WAV-parameters op
         num_channels = wav_file.getnchannels()
         sample_rate = wav_file.getframerate()
-        num_samples = wav_file.getnframes()
 
-        print(f"Kanalen: {num_channels}, Sample rate: {sample_rate} Hz, Aantal samples: {num_samples}")
-
-        # Lees frames en converteer naar mono als nodig
-        frames = wav_file.readframes(num_samples)
-        samples = stereo_to_mono(frames, num_channels)
-
-        # Normaliseer samples naar een bereik van 0 tot 100
-        samples = normalize_samples(samples)
+        print(f"Kanalen: {num_channels}, Sample rate: {sample_rate} Hz")
 
         # Start PWM
         pwm = GPIO.PWM(PWM_PIN, sample_rate)
@@ -48,9 +41,20 @@ def play_wav(file_path):
 
         print("Afspelen gestart...")
         try:
-            for sample in samples:
-                pwm.ChangeDutyCycle(sample)  # Pas duty cycle aan
-                time.sleep(1 / sample_rate)  # Houd de sample rate aan
+            while True:
+                # Lees een buffer aan samples
+                frames = wav_file.readframes(BUFFER_SIZE)
+                if not frames:  # Stop als het einde van het bestand is bereikt
+                    break
+                
+                # Converteer stereo naar mono en normaliseer
+                samples = stereo_to_mono(frames, num_channels)
+                samples = normalize_samples(samples)
+
+                # Speel de samples af
+                for sample in samples:
+                    pwm.ChangeDutyCycle(sample)  # Pas duty cycle aan
+                    time.sleep(1 / sample_rate)  # Houd de sample rate aan
         except KeyboardInterrupt:
             print("Afspelen onderbroken.")
         finally:
