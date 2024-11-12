@@ -1,43 +1,25 @@
 import RPi.GPIO as GPIO
-import wave
-import numpy as np
 import time
+from audio_samples import audio_samples  # Importeer de gegenereerde audio array
 
-PWM_PIN = 18  # GPIO 18 voor PWM
-WAV_FILE = "test.wav"  # Pad naar je WAV-bestand
+PWM_PIN = 18  # GPIO 18
+SAMPLE_RATE = 48000  # Sample rate van de audio
 
-# GPIO-instellingen
+# GPIO-configuratie
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PWM_PIN, GPIO.OUT)
 
-def play_wav(file_path):
-    """Speel een WAV-bestand af via PWM."""
-    with wave.open(file_path, "rb") as wav_file:
-        sample_rate = wav_file.getframerate()
-        num_channels = wav_file.getnchannels()
-
-        if num_channels != 1:
-            raise ValueError("Alleen mono-WAV-bestanden worden ondersteund.")
-
-        print(f"Sample rate: {sample_rate} Hz")
-        samples = np.frombuffer(wav_file.readframes(wav_file.getnframes()), dtype=np.int16)
-        samples = (samples - np.min(samples)) / np.ptp(samples) * 100  # Normaliseer naar 0-100%
-
-        pwm = GPIO.PWM(PWM_PIN, sample_rate)
-        pwm.start(0)
-
-        print("Afspelen gestart...")
-        try:
-            for sample in samples:
-                pwm.ChangeDutyCycle(sample)
-                time.sleep(1 / sample_rate)
-        except KeyboardInterrupt:
-            print("Afspelen onderbroken.")
-        finally:
-            pwm.stop()
+# Start PWM op de juiste sample rate
+pwm = GPIO.PWM(PWM_PIN, SAMPLE_RATE)
+pwm.start(0)  # Begin met een duty cycle van 0%
 
 try:
-    play_wav(WAV_FILE)
-finally:
-    GPIO.cleanup()
+    print("Speelt audiofragment af...")
+    for sample in audio_samples:
+        pwm.ChangeDutyCycle(sample)  # Stel duty cycle in op basis van de sample
+        time.sleep(1 / SAMPLE_RATE)  # Wacht tot de volgende sample
     print("Afspelen voltooid.")
+finally:
+    pwm.stop()
+    GPIO.cleanup()
+    print("GPIO vrijgegeven.")
