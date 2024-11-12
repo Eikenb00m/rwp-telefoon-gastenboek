@@ -1,42 +1,50 @@
 import RPi.GPIO as GPIO
 import time
-from pydub import AudioSegment
+import wave
 import numpy as np
 
-# GPIO-configuratie
-PWM_PIN = 18
-FREQ = 44100  # Sample rate in Hz
+# Configuratie
+PWM_PIN = 18  # GPIO 18 voor PWM
+SAMPLE_RATE = 44100  # Verwachte sample rate (in Hz)
+WAV_FILE = "test.wav"  # Pad naar je WAV-bestand
+
+# GPIO-instellingen
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PWM_PIN, GPIO.OUT)
 
-# MP3-bestand decoderen naar een numpy-array
-def decode_mp3_to_pwm(mp3_file):
-    print(f"Decodeer {mp3_file}...")
-    audio = AudioSegment.from_file(mp3_file, format="mp3")  # Decodeer MP3
-    samples = np.array(audio.get_array_of_samples())       # Converteer naar een numpy-array
-    samples = samples / np.max(np.abs(samples))            # Normaliseer samples
-    print("MP3 gedecodeerd.")
-    return samples
+def play_wav(file_path):
+    """Speel een WAV-bestand af via PWM."""
+    with wave.open(file_path, "rb") as wav_file:
+        # Controleer of het WAV-bestand mono en ongecomprimeerd is
+        if wav_file.getnchannels() != 1:
+            raise ValueError("Alleen mono-WAV-bestanden worden ondersteund.")
+        if wav_file.getframerate() != SAMPLE_RATE:
+            raise ValueError(f"Sample rate moet {SAMPLE_RATE} Hz zijn.")
+        
+        # Lees frames en converteer naar numpy-array
+        frames = wav_file.readframes(wav_file.getnframes())
+        samples = np.frombuffer(frames, dtype=np.int16)
+        samples = samples / np.max(np.abs(samples))  # Normaliseer samples naar -1 tot 1
 
-# PWM-audio afspelen
-def play_pwm(samples, duration):
-    pwm = GPIO.PWM(PWM_PIN, FREQ)
-    pwm.start(50)  # Start met een gemiddelde duty cycle
-    print("Start PWM-audio...")
+        # Start PWM
+        pwm = GPIO.PWM(PWM_PIN, SAMPLE_RATE)  # PWM met de sample rate als frequentie
+        pwm.start(50)  # Start met een gemiddelde duty cycle
 
-    try:
-        for sample in samples:
-            duty_cycle = (sample + 1) * 50  # Schaal naar 0-100%
-            pwm.ChangeDutyCycle(duty_cycle)
-            time.sleep(1 / FREQ)
-    except KeyboardInterrupt:
-        print("Afspelen onderbroken.")
-    finally:
-        pwm.stop()
-        GPIO.cleanup()
-        print("PWM-audio gestopt.")
+        print(f"Speelt {file_path} af...")
+        try:
+            for sample in samples:
+                # Converteer sample naar duty cycle (0-100%)
+                duty_cycle = (sample + 1) * 50
+                pwm.ChangeDutyCycle(duty_cycle)
+                time.sleep(1 / SAMPLE_RATE)
+        except KeyboardInterrupt:
+            print("Afspelen onderbroken.")
+        finally:
+            pwm.stop()
 
-if __name__ == "__main__":
-    MP3_FILE = "test.mp3"  # Vervang door je MP3-bestand
-    samples = decode_mp3_to_pwm(MP3_FILE)
-    play_pwm(samples, len(samples) / FREQ)
+# Start afspelen
+try:
+    play_wav(WAV_FILE)
+finally:
+    GPIO.cleanup()
+    print("Afspelen voltooid.")
