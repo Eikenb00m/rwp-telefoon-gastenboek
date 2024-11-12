@@ -25,4 +25,4 @@ try:
 finally:
     pwm.stop()
     GPIO.cleanup()
-    print("
+    print("PWM gestopt en GPIO vrijgegeven.")
