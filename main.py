@@ -12,18 +12,27 @@ WAV_FILE = "test.wav"  # Pad naar je WAV-bestand
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(PWM_PIN, GPIO.OUT)
 
+def stereo_to_mono(frames, num_channels):
+    """Converteer stereo-audio naar mono door gemiddeldes te nemen."""
+    samples = np.frombuffer(frames, dtype=np.int16)
+    if num_channels == 2:  # Als het stereo is
+        samples = samples.reshape(-1, 2)  # Split stereo naar twee kanalen
+        samples = samples.mean(axis=1).astype(np.int16)  # Gemiddelde van beide kanalen
+    return samples
+
 def play_wav(file_path):
     """Speel een WAV-bestand af via PWM."""
     with wave.open(file_path, "rb") as wav_file:
-        # Controleer of het WAV-bestand mono en ongecomprimeerd is
-        if wav_file.getnchannels() != 1:
-            raise ValueError("Alleen mono-WAV-bestanden worden ondersteund.")
-        if wav_file.getframerate() != SAMPLE_RATE:
-            raise ValueError(f"Sample rate moet {SAMPLE_RATE} Hz zijn.")
-        
+        # Haal audio-informatie op
+        num_channels = wav_file.getnchannels()
+        framerate = wav_file.getframerate()
+
+        if framerate != SAMPLE_RATE:
+            raise ValueError(f"Sample rate moet {SAMPLE_RATE} Hz zijn, gevonden {framerate} Hz.")
+
         # Lees frames en converteer naar numpy-array
         frames = wav_file.readframes(wav_file.getnframes())
-        samples = np.frombuffer(frames, dtype=np.int16)
+        samples = stereo_to_mono(frames, num_channels)  # Converteer naar mono als nodig
         samples = samples / np.max(np.abs(samples))  # Normaliseer samples naar -1 tot 1
 
         # Start PWM
