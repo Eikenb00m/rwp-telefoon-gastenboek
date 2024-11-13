@@ -1,7 +1,6 @@
 import os
 import pyaudio
 import wave
-import ffmpeg
 from datetime import datetime
 
 # Configuratie
@@ -33,7 +32,7 @@ def start_recording():
 
     try:
         while RECORDING:
-            data = stream.read(CHUNK)
+            data = stream.read(CHUNK, exception_on_overflow=False)
             frames.append(data)
     except KeyboardInterrupt:
         print("Opname handmatig gestopt.")
@@ -53,12 +52,6 @@ def start_recording():
         wf.writeframes(b''.join(frames))
 
     print(f"Opname opgeslagen als {wav_file}")
-
-    # Converteer naar MP3
-    mp3_file = wav_file.replace(".wav", ".mp3")
-    ffmpeg.input(wav_file).output(mp3_file).run(overwrite_output=True)
-    os.remove(wav_file)  # Verwijder het originele WAV-bestand
-    print(f"Opname geconverteerd naar MP3: {mp3_file}")
 
 if __name__ == "__main__":
     while True:
