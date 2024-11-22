@@ -41,10 +41,11 @@ if __name__ == "__main__":
     calling_tone = CallingTone(PWM_PIN)
 
     try:
-        print("Start beltoon...")
-        calling_tone.play_cycle(3)  # Speel de beltoon 3 keer
-        print("Beltoon voltooid.")
+        print("Start beltoon test...")
+        cycles = int(input("Voer het aantal cycles in: "))  # Vraag om aantal cycles
+        calling_tone.play_cycle(cycles)
+        print("Beltoon test voltooid.")
     except KeyboardInterrupt:
-        print("Programma gestopt.")
+        print("Programma gestopt door gebruiker.")
     finally:
         calling_tone.stop()
