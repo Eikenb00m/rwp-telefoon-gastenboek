@@ -15,13 +15,12 @@ try:
     print("Wachten tot de hoorn wordt opgepakt...")
     while True:
         if switch.is_active():  # Controleer of de hoorn is opgepakt
-            print("Hoorn opgepakt! Stop beltoon.")
-            calling_tone.stop()  # Stop de beltoon
-            break  # Verlaat de lus of voer andere logica uit
+            print("Hoorn opgepakt! Beltoon gestopt.")
+            calling_tone.stop()  # Zorg dat de beltoon stopt
+            time.sleep(1)  # Wacht een seconde
         else:
             print("Hoorn ligt neer. Start beltoon...")
-            calling_tone.play_cycle(NUMBER_OF_CYCLES)
-            time.sleep(1)  # Wacht even voordat je opnieuw controleert
+            calling_tone.play_cycle(1)  # Speel 1 cycle en controleer opnieuw
 except KeyboardInterrupt:
     print("Programma gestopt.")
 finally:
