@@ -12,32 +12,32 @@ class CallingTone:
         self.frequency = frequency
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.pwm_pin, GPIO.OUT)
-        self.pwm = GPIO.PWM(self.pwm_pin, self.frequency)
-        self.pwm.start(0)  # Start met duty cycle 0%
+        self.pwm = GPIO.PWM(self.pwm_pin, self.frequency)  # Stel de frequentie in
+        self.pwm.start(0)  # Start met een duty cycle van 0% (stil)
 
     def play_cycle(self, cycles=1):
         """
         Speel de beltoon met opgegeven aantal cycles (aan/uit).
         :param cycles: Aantal keer dat de toon aan/uit moet gaan.
         """
-        for _ in range(cycles):
-            print("Toon aan...")
-            self.pwm.ChangeDutyCycle(50)  # 50% duty cycle
-            time.sleep(2)  # Toon aan voor 2 seconden
+        for i in range(cycles):
+            print(f"Cycle {i + 1}: Toon aan...")
+            self.pwm.ChangeDutyCycle(50)  # Zet de toon aan (50% duty cycle)
+            time.sleep(2)  # Laat de toon 2 seconden aan staan
             print("Toon uit...")
-            self.pwm.ChangeDutyCycle(0)  # Toon uit
-            time.sleep(2)  # Pauze voor 2 seconden
+            self.pwm.ChangeDutyCycle(0)  # Zet de toon uit
+            time.sleep(2)  # Laat de toon 2 seconden uit staan
 
     def stop(self):
         """
         Stop de toon en maak de GPIO vrij.
         """
+        print("Toon gestopt en GPIO vrijgegeven.")
         self.pwm.stop()
         GPIO.cleanup()
 
-# Test de module zelfstandig
 if __name__ == "__main__":
-    PWM_PIN = 18  # Pas aan naar jouw GPIO-pin
+    PWM_PIN = 18  # GPIO-pin voor PWM
     calling_tone = CallingTone(PWM_PIN)
 
     try:
