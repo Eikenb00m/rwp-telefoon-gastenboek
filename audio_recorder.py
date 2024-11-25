@@ -1,80 +1,38 @@
-import os
-import sounddevice as sd
+import time
 import numpy as np
-import wave
-from datetime import datetime
+from scipy.io.wavfile import write
+import busio
+import digitalio
+from board import SCK, MISO, MOSI, D10  # Pas D10 aan naar jouw CS-pin (GPIO10)
+from adafruit_mcp3xxx.mcp3008 import MCP3008
+from adafruit_mcp3xxx.analog_in import AnalogIn
 
-# Parameters voor de opname
-SAMPLE_RATE = 44100  # Sample rate in Hz
-CHANNELS = 1  # Mono opname
-DURATION = None  # Geen vaste tijdslimiet (loopt tot "stop")
+# Maak de SPI-bus en MCP3008
+spi = busio.SPI(clock=SCK, MISO=MISO, MOSI=MOSI)
+cs = digitalio.DigitalInOut(D10)  # GPIO10 (Pin 19) als CS
+mcp = MCP3008(spi, cs)
 
-# Maak de map 'opnames' als die nog niet bestaat
-os.makedirs("opnames", exist_ok=True)
+# Verbind een analoge ingang (bijv. kanaal 0)
+chan = AnalogIn(mcp, MCP3008.P0)
 
-def record_audio():
-    """
-    Start met het opnemen van audio en sla het bestand op als WAV in de map 'opnames'.
-    """
-    print("Opnemen gestart! Typ 'stop' en druk op Enter om te stoppen.")
+# Opnameparameters
+SAMPLE_RATE = 8000  # 8 kHz
+DURATION = 5  # 5 seconden
+NUM_SAMPLES = SAMPLE_RATE * DURATION
+audio_data = []
 
-    recorded_data = []  # Hier slaan we de audioframes op
+print("Opname gestart...")
+start_time = time.time()
+while len(audio_data) < NUM_SAMPLES:
+    audio_data.append(chan.value)
+    time.sleep(1 / SAMPLE_RATE)  # Verzamel data op de juiste snelheid
 
-    try:
-        def audio_callback(indata, frames, time, status):
-            if status:
-                print(f"Statusfout: {status}", flush=True)
-            # Voeg inkomende data toe aan recorded_data
-            recorded_data.append(indata.copy())
-            # Toon de geluidsintensiteit in de terminal
-            peak = np.abs(indata).max()
-            print(f"Inputniveau: {int(peak * 100)}%", flush=True)
+print("Opname gestopt.")
 
-        # Start opname
-        with sd.InputStream(
-            samplerate=SAMPLE_RATE,
-            channels=CHANNELS,
-            callback=audio_callback
-        ):
-            while True:
-                user_input = input()  # Wacht op 'stop'
-                if user_input.strip().lower() == "stop":
-                    break
+# Normaliseer en converteer naar 16-bit
+audio_array = np.array(audio_data, dtype=np.int16)
+audio_array = (audio_array / max(audio_array) * 32767).astype(np.int16)
 
-    except Exception as e:
-        print(f"Fout tijdens opnemen: {e}")
-
-    # Verwerk en sla de opname op
-    print("Opname gestopt. Audio opslaan...")
-    recorded_data = np.concatenate(recorded_data, axis=0)  # Combineer alle audioframes
-    save_audio(recorded_data)
-    print("Opname succesvol opgeslagen!")
-
-def save_audio(data):
-    """
-    Sla de opgenomen audio op als WAV-bestand.
-    :param data: Numpy-array met de audioframes.
-    """
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"opnames/opname_{timestamp}.wav"
-
-    # Schrijf de data naar een WAV-bestand
-    with wave.open(filename, "w") as wf:
-        wf.setnchannels(CHANNELS)
-        wf.setsampwidth(2)  # 16-bit audio
-        wf.setframerate(SAMPLE_RATE)
-        wf.writeframes(data.astype(np.int16).tobytes())
-
-    print(f"Bestand opgeslagen als: {filename}")
-
-if __name__ == "__main__":
-    print("Typ 'start' en druk op Enter om te beginnen met opnemen.")
-    while True:
-        command = input("Commando: ").strip().lower()
-        if command == "start":
-            record_audio()
-        elif command == "exit":
-            print("Programma beëindigd.")
-            break
-        else:
-            print("Onbekend commando. Typ 'start' om te beginnen of 'exit' om af te sluiten.")
+# Sla op als WAV-bestand
+write("test_recording.wav", SAMPLE_RATE, audio_array)
+print("Audio opgeslagen als test_recording.wav")
