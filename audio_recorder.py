@@ -1,5 +1,6 @@
 import os
 import time
+import threading
 import numpy as np
 from scipy.io.wavfile import write
 import busio
@@ -11,8 +12,8 @@ from datetime import datetime
 
 # Parameters
 SAMPLE_RATE = 8000  # 8 kHz
-DURATION = None  # Geen vaste tijdslimiet
 audio_data = []  # Opslag voor audioframes
+recording = False  # Status van de opname
 
 # SPI- en MCP3008-configuratie
 spi = busio.SPI(clock=SCK, MISO=MISO, MOSI=MOSI)
@@ -23,27 +24,32 @@ chan = AnalogIn(mcp, 0)  # Gebruik kanaal 0 van de MCP3008
 # Map maken voor opnames als deze nog niet bestaat
 os.makedirs("opnames", exist_ok=True)
 
-def start_recording():
+def record_audio():
     """
     Start met opnemen van audioframes.
     """
-    global audio_data
+    global audio_data, recording
     audio_data = []  # Reset de audio-opslag
+    recording = True
     print("Opname gestart! Typ 'stop' om te stoppen.")
-    start_time = time.time()
 
     try:
-        while True:
+        while recording:
             # Voeg data toe op basis van SAMPLE_RATE
             audio_data.append(chan.value)
             time.sleep(1 / SAMPLE_RATE)
-    except KeyboardInterrupt:
-        print("\nOpname handmatig gestopt.")
+    except Exception as e:
+        print(f"Fout tijdens opnemen: {e}")
+
+    print("Opname gestopt.")
 
 def stop_recording():
     """
     Stop met opnemen en sla de audio op als WAV-bestand.
     """
+    global recording
+    recording = False  # Stop de opname-loop
+
     if not audio_data:
         print("Geen audio opgenomen!")
         return
@@ -65,14 +71,20 @@ if __name__ == "__main__":
         command = input("Commando: ").strip().lower()
 
         if command == "start":
-            try:
-                start_recording()
-            except KeyboardInterrupt:
-                print("\nOpname onderbroken. Typ 'stop' om te verwerken.")
+            if not recording:
+                threading.Thread(target=record_audio, daemon=True).start()
+            else:
+                print("Opname is al bezig!")
         elif command == "stop":
-            stop_recording()
+            if recording:
+                stop_recording()
+            else:
+                print("Er is geen opname bezig!")
         elif command == "exit":
-            print("Programma beëindigd.")
-            break
+            if recording:
+                print("Stop eerst de opname voordat je het programma afsluit.")
+            else:
+                print("Programma beëindigd.")
+                break
         else:
             print("Onbekend commando. Typ 'start', 'stop' of 'exit'.")
