@@ -13,7 +13,7 @@ cs = digitalio.DigitalInOut(D10)  # GPIO10 (Pin 19) als CS
 mcp = MCP3008(spi, cs)
 
 # Verbind een analoge ingang (bijv. kanaal 0)
-chan = AnalogIn(mcp, MCP3008.P0)
+chan = AnalogIn(mcp, 0)  # Gebruik 0 voor het eerste kanaal (CH0)
 
 # Opnameparameters
 SAMPLE_RATE = 8000  # 8 kHz
