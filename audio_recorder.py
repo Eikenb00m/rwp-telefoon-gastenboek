@@ -1,90 +1,39 @@
-import os
+import wave
 import time
-import threading
 import numpy as np
-from scipy.io.wavfile import write
-import busio
-import digitalio
-from board import SCK, MISO, MOSI, D10  # Pas D10 aan naar jouw CS-pin (GPIO10)
-from adafruit_mcp3xxx.mcp3008 import MCP3008
-from adafruit_mcp3xxx.analog_in import AnalogIn
 from datetime import datetime
 
-# Parameters
+# Configuratie
 SAMPLE_RATE = 8000  # 8 kHz
-audio_data = []  # Opslag voor audioframes
-recording = False  # Status van de opname
+RECORD_SECONDS = 10  # Aantal seconden opnemen
+CHANNEL = 0  # MCP3008 kanaal 0
 
-# SPI- en MCP3008-configuratie
-spi = busio.SPI(clock=SCK, MISO=MISO, MOSI=MOSI)
-cs = digitalio.DigitalInOut(D10)  # GPIO10 (Pin 19) als CS
-mcp = MCP3008(spi, cs)
-chan = AnalogIn(mcp, 0)  # Gebruik kanaal 0 van de MCP3008
+# Voorbeeldfunctie voor MCP3008 (vervang met jouw MCP-code)
+from adafruit_mcp3xxx.analog_in import AnalogIn
+mic_input = AnalogIn(mcp, CHANNEL)
 
-# Map maken voor opnames als deze nog niet bestaat
-os.makedirs("opnames", exist_ok=True)
+# WAV-bestand configuratie
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+filename = f"opnames/opname_{timestamp}.wav"
+wavefile = wave.open(filename, 'w')
+wavefile.setnchannels(1)  # Mono
+wavefile.setsampwidth(2)  # 16-bits audio
+wavefile.setframerate(SAMPLE_RATE)
 
-def record_audio():
-    """
-    Start met opnemen van audioframes.
-    """
-    global audio_data, recording
-    audio_data = []  # Reset de audio-opslag
-    recording = True
-    print("Opname gestart! Typ 'stop' om te stoppen.")
+print(f"Opnemen... ({RECORD_SECONDS} seconden)")
+audio_data = []
 
-    try:
-        while recording:
-            # Voeg data toe op basis van SAMPLE_RATE
-            audio_data.append(chan.value)
-            time.sleep(1 / SAMPLE_RATE)
-    except Exception as e:
-        print(f"Fout tijdens opnemen: {e}")
+# Start opnemen
+start_time = time.time()
+while time.time() - start_time < RECORD_SECONDS:
+    raw_value = mic_input.value
+    # Normaliseer naar 16-bit
+    sample = int((raw_value / 65535) * 32767)
+    audio_data.append(sample)
 
-    print("Opname gestopt.")
+# Schrijf data naar WAV-bestand
+audio_array = np.array(audio_data, dtype=np.int16)
+wavefile.writeframes(audio_array.tobytes())
+wavefile.close()
 
-def stop_recording():
-    """
-    Stop met opnemen en sla de audio op als WAV-bestand.
-    """
-    global recording
-    recording = False  # Stop de opname-loop
-
-    if not audio_data:
-        print("Geen audio opgenomen!")
-        return
-
-    # Normaliseer en converteer naar 16-bit
-    audio_array = np.array(audio_data, dtype=np.int16)
-    audio_array = (audio_array / max(audio_array) * 32767).astype(np.int16)
-
-    # Sla de opname op als WAV-bestand
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"opnames/opname_{timestamp}.wav"
-    write(filename, SAMPLE_RATE, audio_array)
-    print(f"Opname opgeslagen als: {filename}")
-
-if __name__ == "__main__":
-    print("Typ 'start' om een opname te starten, 'stop' om te stoppen, of 'exit' om af te sluiten.")
-
-    while True:
-        command = input("Commando: ").strip().lower()
-
-        if command == "start":
-            if not recording:
-                threading.Thread(target=record_audio, daemon=True).start()
-            else:
-                print("Opname is al bezig!")
-        elif command == "stop":
-            if recording:
-                stop_recording()
-            else:
-                print("Er is geen opname bezig!")
-        elif command == "exit":
-            if recording:
-                print("Stop eerst de opname voordat je het programma afsluit.")
-            else:
-                print("Programma beëindigd.")
-                break
-        else:
-            print("Onbekend commando. Typ 'start', 'stop' of 'exit'.")
+print(f"Opname opgeslagen als: {filename}")
