@@ -2,15 +2,23 @@ import wave
 import time
 import numpy as np
 from datetime import datetime
+import busio
+import digitalio
+from board import SCK, MISO, MOSI, D8  # Pas D8 aan naar jouw CS-pin
+from adafruit_mcp3xxx.mcp3008 import MCP3008
+from adafruit_mcp3xxx.analog_in import AnalogIn
+
+# SPI-bus en MCP3008 configureren
+spi = busio.SPI(clock=SCK, MISO=MISO, MOSI=MOSI)
+cs = digitalio.DigitalInOut(D8)  # Chip Select (D8 = GPIO8, Pin 24)
+mcp = MCP3008(spi, cs)
+
+# Microfoon op kanaal 0
+mic_input = AnalogIn(mcp, 0)
 
 # Configuratie
 SAMPLE_RATE = 8000  # 8 kHz
-RECORD_SECONDS = 10  # Aantal seconden opnemen
-CHANNEL = 0  # MCP3008 kanaal 0
-
-# Voorbeeldfunctie voor MCP3008 (vervang met jouw MCP-code)
-from adafruit_mcp3xxx.analog_in import AnalogIn
-mic_input = AnalogIn(mcp, CHANNEL)
+RECORD_SECONDS = 5  # Aantal seconden opnemen
 
 # WAV-bestand configuratie
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
