@@ -35,9 +35,10 @@ audio_data = []
 start_time = time.time()
 while time.time() - start_time < RECORD_SECONDS:
     raw_value = mic_input.value
-    # Normaliseer naar 16-bit
     sample = int((raw_value / 65535) * 32767)
     audio_data.append(sample)
+    time.sleep(1 / SAMPLE_RATE)  # Pauze tussen samples
+
 
 # Schrijf data naar WAV-bestand
 audio_array = np.array(audio_data, dtype=np.int16)
