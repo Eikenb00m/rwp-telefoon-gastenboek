@@ -39,6 +39,14 @@ while time.time() - start_time < RECORD_SECONDS:
     audio_data.append(sample)
     time.sleep(1 / SAMPLE_RATE)  # Pauze tussen samples
 
+# Normaliseer audio data
+if max(audio_data) > 0:
+    audio_array = np.array(audio_data, dtype=np.int16)
+    audio_array = (audio_array / max(audio_array) * 32767).astype(np.int16)
+else:
+    print("Geen bruikbare audio opgenomen. Bestand wordt niet opgeslagen.")
+    exit()
+
 
 # Schrijf data naar WAV-bestand
 audio_array = np.array(audio_data, dtype=np.int16)
