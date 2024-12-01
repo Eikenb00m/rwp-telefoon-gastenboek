@@ -1,19 +1,20 @@
 import busio
 import digitalio
-from board import SCK, MISO, MOSI, D8
+import board
 from adafruit_mcp3xxx.mcp3008 import MCP3008
 from adafruit_mcp3xxx.analog_in import AnalogIn
 
-# Initialiseer de SPI-bus
-spi = busio.SPI(clock=SCK, MISO=MISO, MOSI=MOSI)
-# Stel de Chip Select (CS) pin in
-cs = digitalio.DigitalInOut(D8)  # D8 komt overeen met GPIO14
+# Maak de SPI-bus aan
+spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
 
-# Maak een MCP3008 object aan
+# Stel de chip select (CS) pin in
+cs = digitalio.DigitalInOut(board.D5)  # Pas aan naar de juiste pin
+
+# Maak het MCP3008-object aan
 mcp = MCP3008(spi, cs)
 
-# Maak een AnalogIn object voor kanaal 0
-channel_0 = AnalogIn(mcp, MCP3008.P0)
+# Maak een AnalogIn-object voor kanaal 0
+channel_0 = AnalogIn(mcp, 0)  # Gebruik 0 voor kanaal 0
 
 # Lees en print de waarde van kanaal 0
 raw_value = channel_0.value
