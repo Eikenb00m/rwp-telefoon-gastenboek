@@ -1,22 +1,15 @@
-import busio
-import digitalio
-import board
-from adafruit_mcp3xxx.mcp3008 import MCP3008
-from adafruit_mcp3xxx.analog_in import AnalogIn
+import time
+from gpiozero import MCP3008
 
-# Maak de SPI-bus aan
-spi = busio.SPI(clock=board.SCK, MISO=board.MISO, MOSI=board.MOSI)
+# Initialiseer MCP3008 op kanaal 0
+adc = MCP3008(channel=0)
 
-# Stel de chip select (CS) pin in
-cs = digitalio.DigitalInOut(board.D5)  # Pas aan naar de juiste pin
-
-# Maak het MCP3008-object aan
-mcp = MCP3008(spi, cs)
-
-# Maak een AnalogIn-object voor kanaal 0
-channel_0 = AnalogIn(mcp, 0)  # Gebruik 0 voor kanaal 0
-
-# Lees en print de waarde van kanaal 0
-raw_value = channel_0.value
-voltage = channel_0.voltage
-print(f"RAW waarde: {raw_value}, Voltage: {voltage:.2f}V")
+try:
+    while True:
+        # Lees de analoge waarde (0 tot 1) en bereken de spanning
+        waarde = adc.value  # Waarde tussen 0 en 1
+        spanning = waarde * 3.3  # Omrekenen naar spanning
+        print(f"Waarde: {waarde:.2f}, Spanning: {spanning:.2f}V")
+        time.sleep(0.5)
+except KeyboardInterrupt:
+    print("Uitlezen gestopt.")
