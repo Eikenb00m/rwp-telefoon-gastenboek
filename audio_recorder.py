@@ -17,7 +17,7 @@ mcp = MCP3008(spi, cs)
 mic_input = AnalogIn(mcp, 0)
 
 # Configuratie
-SAMPLE_RATE = 8000  # 8 kHz
+SAMPLE_RATE = 44100  # 8 kHz
 RECORD_SECONDS = 5  # Aantal seconden opnemen
 
 # WAV-bestand configuratie
